@@ -60,4 +60,4 @@ Everything in `src/`, `generated/` and `runs/`: the emulator, lab, verifier, age
 
 ## Team
 
-<!-- Add every team member's name and GitHub handle before submitting. -->
+Solo entry by Ali Zhumataev ([@fridaytaev001](https://github.com/fridaytaev001)).
