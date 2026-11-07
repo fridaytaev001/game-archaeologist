@@ -1,0 +1,80 @@
+[
+  {
+    "id": 1,
+    "label": "Inferred",
+    "claim": "Maze storage is column-major 12 columns x 6 rows starting 0x209; 0x251-0x254 are score/level-related bytes",
+    "evidence": "0x209 dump shows level-0 maze values 00/05; verifier at 4dc shows vd=02 vc=03 matching column-major layout; 0x251=0a 0x252=03 0x253=02 0x254=03"
+  },
+  {
+    "id": 2,
+    "label": "Inferred",
+    "claim": "Frame timing: game sync point is NOT 0x4dc; each pass through 0x4dc takes 5 frames (delay timer). Real step should span the delay wait 0x76e..0x778.",
+    "evidence": "Experiment 20 frames idle then 5 frames key7: mem205 increments once (one loop pass per 5 frames). Break log shows 4dc hit every 5 frames (17,18 then 23,28...). Verifier says 5 frames/step with 4dc as sync start -> step begins mid-draw. Better SYNC is top of full loop 0x754 or 0x77a which includes delay wait."
+  },
+  {
+    "id": 3,
+    "label": "Inferred",
+    "claim": "Game structure: va=0 attract w/ demo enemy anim + press-6 start; va=3 intro? (0x77e resets counters); va=2 death/melody state clearing to title; va=1 active play. Death path 0x660/0x67a jingles + va=2. Level-complete detected at 0x578 (all maze zero?) -> plays win jingle, increments level byte 0x251, loads next level maze at 0x5f8.",
+    "evidence": "Disassembly 0x754-0x8b8: va checks, 0x78e title screen w/ score + level digit, 0x866 random-dot attract, 0x660/0x67a death/win jingles using v2/v3 note bytes, 0x578 branch on vf==0 (all maze empty)."
+  },
+  {
+    "id": 4,
+    "label": "Observed",
+    "claim": "Key 6 press during attract starts game (va 0->3 path): resets 0x204/0x205, loads maze, draws play field with player sprite, v6 stays 00. Subsequent directional keys move + erase trail.",
+    "evidence": "20 idle + 8 frames key6 + 30 idle + 30 key7: mem205 increments only after start; screen shows play field with enemy (still attract enemy anim? v7=0f) and player trail erasing; va=00 after wall-blocked move? vd=02 vc=03 v5=ff."
+  },
+  {
+    "id": 5,
+    "label": "Observed",
+    "claim": "START_KEYS=[6] held at power-on: pressing 6 during attract sets va=3?? Actually key6 hold from boot reaches va=00 vb=03 after 300 frames idle-attract; then key9 press starts motion (mem203 00->01, pos 02/03->04/01) after ~40 frames delay (va path 3 intro?). So full step = attract loop; game start requires key6 then direction key.",
+    "evidence": "300 frames key6 alone: still va=00 attract screen, mem205 untouched. Then 300 frames key9: mem205 starts incrementing at frame 304, mem203->01, pos changes, v6=01 (playing?) then va=00? va=00 vb=00 vc=01 vd=04."
+  },
+  {
+    "id": 6,
+    "label": "Inferred",
+    "claim": "True boot/title sequence: power-on shows probably 'score' screen then attract (v6=0a). SYNC_PC candidates: 0x770 (the delay-wait + input loop) is one step per full draw cycle. Frame wait at 0x76e (delay 5->0) then input checks 0x77a+. A step should start at top of main loop AFTER delay wait — best SYNC_PC=0x77a (key checks begin).",
+    "evidence": "Disassembly: 0x754 caller loop -> 0x75c draw maze -> 0x77a key checks -> va branches -> attract 0x866 draws random + checks keys 5,7,8,9,6 (efa1 = skip if NOT pressed, so any of keys starts game via 0x3c2+4dc?). Delay wait 0x76e (5 frames) + 0x770 buzzer-gated wait precede key checks? Actually 0x770 waits while delay!=0 AND buzzer on."
+  },
+  {
+    "id": 7,
+    "label": "Observed",
+    "claim": "Key 9 from power-on with no key6: boots into active play (va=01) directly? 6 frames key9 -> reached 0x41c mid border-draw (boot path, stack [0x486]). So holding a direction key at boot skips attract? START_KEYS=[9] or any direction gets to first SYNC faster.",
+    "evidence": "Power-on + 6 frames key9 ends at pc=41c (inside 0x3c2 border routine called from 0x486 boot). va=00? vb=0b. Screen shows partial border + stray blocks (mid-draw)."
+  },
+  {
+    "id": 8,
+    "label": "Observed",
+    "claim": "Main loop period is 5 frames: 0x754 hit at frames 18,23,28,... after initial 17. i cycles 33b/340/345/34a (enemy anim frames?) v7 = 00/05/0a/0f counter. So SYNC_PC=0x754 with createGame consuming zero rand draws? randomDraws=0 at all attract breaks.",
+    "evidence": "break_at 0x754 log: breaks every 5 frames (17,18 then 23,28,33...), registers stable vd=02 vc=03 (player maze pos), v8=10 v9=34 (enemy pixel), randomDraws=0."
+  },
+  {
+    "id": 9,
+    "label": "Recovered",
+    "claim": "Renderer 0x3c2 decoded: border via sprites at 0x327/0x325/0x326 (15-tall corners + 1-px fills); maze cells 5x5 sprites at 0x34f+value offset? draws 6 regs per column (v0..v5) at x=vc(+2?) y=1,6,11,16,21,26; vc+=5, vd+=6; enemy sprite 5px at 0x336 from v0,v1 (pixel = vd*5+2? vc*5+1); player sprite 5px at 0x2ed+vb*5+frame where vb=3 (dir?) and vd/vc maze pos. Attract text drawn by 0x484 caller.",
+    "evidence": "Disassembly 0x3c2-0x482: i=0x209+vd load 6 regs; i=0x34f+vN sprite 5 at (vc,y) with y=1,6,11,16,21,26; vc+=5 (x step), vd+=6 (next column) until 0x48; enemy at 0x336; player at 0x2ed+vb."
+  },
+  {
+    "id": 10,
+    "label": "Inferred",
+    "claim": "Cell values: 0x00 empty path, 05 wall/block, 0a/0f dots worth score, 14/19/1e bonus items that swap sprite frame via 0x31d/0x321 tables and redraw; 0x23(35) = maybe exit? Movement: each step with va==1 first increments score counter 0x204/0x205 (BCD-ish base-100 x2?), draws player at old pos (erase), checks destination cell: if 0x05 wall -> bounce back + va=0; enemy pixel compare via xor/or -> va=2 death; else act on cell value.",
+    "evidence": "0x504-0x6d2: counter ++ with carry at 100 and cap 99/99->63/63; erase player sprite; read cell (index vd*2+vd*2... = vd*?+vc, addr 0x209); vf=0x23-cell; if 05 wall revert+va=0; 0a->va=3; 0f + table lookup swap vb; 14/19 similar; 1e->redraw+va=0."
+  },
+  {
+    "id": 11,
+    "label": "Recovered",
+    "claim": "Level data: each level 76 bytes (72 maze + 4 header) at 0x8ba. Level0 header = 0a 03 04 01 (0x0a=? maybe level digit sprite?; vd start=03, vc start=04, vb start=01). Maze 72 bytes column-major 12 cols x 6 rows. Level1 starts 0x906: header 00 00 00 00? Actually 0x906 = 05 00 05... hmm need re-slice: first 72 bytes 0x8ba-0x901 maze, 0x902-0x905 header (0a 03 04 01). Next level at 0x906.",
+    "evidence": "0x8ba dump 160 bytes: bytes 72-75 = 0a 03 04 01 after 72 maze bytes (05/00 pattern). Next bytes start another 05-pattern (level 1 maze)."
+  },
+  {
+    "id": 12,
+    "label": "Inferred",
+    "claim": "Level stride 76: L0 at 0x8ba (header 0a 03 04 01), L1 at 0x906 (maze + header 00 01 04 05?), L2 at 0x952 (header 09 03 02 03). Maze values seen: 00 empty, 05 wall, 0a/0f dots, 14/19/1e specials. Number of levels: (0xBB1-0x8BA)/76 = 194/76 ~ 2.5 -> probably 3 levels then wraps? need ROM end check.",
+    "evidence": "0x902 dump: after header, level1 maze all 05/00 then header bytes 00 01 04 05 at offset 76..79, then level2 maze with 14 value visible, header 09 03 02 03."
+  },
+  {
+    "id": 13,
+    "label": "Recovered",
+    "claim": "Cell index formula for gameplay (0x5c8): idx = vd*2+vd*2... = vd*8+vc? Disasm: v0=vd; v0+=vd (2vd); v0+=vd (3vd); v0+=v0 (6vd); v0+=vc -> 6vd+vc. But maze is 12 wide? With column-major 12 cols x 6 rows, idx = col*6+row = vd*6+vc. Yes matches (vd=col, vc=row).",
+    "evidence": "0x5c8-0x5d0: v0=vd; +=vd; +=vd; +=v0; +=vc => 6*vd+vc. Renderer used ve+=6 per column similarly. So maze column-major: index = col*6+row, col 0..11, row 0..5."
+  }
+]

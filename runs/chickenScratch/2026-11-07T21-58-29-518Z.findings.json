@@ -1,0 +1,56 @@
+[
+  {
+    "id": 1,
+    "label": "Inferred",
+    "claim": "ROM boots into hires title/demo loop waiting at routine 2E8/324 for key 6; pressing 6 advances past title",
+    "evidence": "Disassembly 02E8-032E checks key v0=06 and delay loop at 0324; experiment with key6 changed pc from 324 to 204/456"
+  },
+  {
+    "id": 2,
+    "label": "Inferred",
+    "claim": "After starting, main game screen is a 4x4 sliding-tile board (plane2 tiles) with two color cursors (plane1 eyes); keys move cursors.",
+    "evidence": "Screen shows 4x4 grid of 2-tiles; registers vc/vd cursor pos, v7/v8 second cursor; holding key5 changed vd/v8"
+  },
+  {
+    "id": 3,
+    "label": "Inferred",
+    "claim": "Game is memory-match (concentration) on 4x4 grid: B19 dispatch checks keys 2(vertical?)/4? Cursor1 (vc,vd) and cursor2 (v7,v8) move; 866/894 select tiles, 8C2 checks matches, clears pair and decrements remaining counter at 3373.",
+    "evidence": "Code 0AE9-0B17 maps keys 7,4,5,2,6 to selections; 8C2 loads pair values from 446C and calls 836 collision check; 90F decrements mem 3373"
+  },
+  {
+    "id": 4,
+    "label": "Inferred",
+    "claim": "Main game loop is at B19 (SYNC candidate): iterates vb=0..7 every 4 frames; checks keys there. B99 routine around it draws tiles/eyes and consumes random.",
+    "evidence": "break_at B19 hits every 4 frames with vb cycling 1..7,0; ve=0x34 constant; profile shows B99 busiest after startup"
+  },
+  {
+    "id": 5,
+    "label": "Inferred",
+    "claim": "Setup: A37 builds 16-entry deck at 3374+ (pairs 00-07) via swaps at 541/65?; A37 sets mem3373=08 pairs left, counters 53E=pos states, cursors vc/vd=08/0B, v7/v8=0F/0E; sprites for 16 tiles from 2F33; eyes at 4444 offsets; board pos from 446C table.",
+    "evidence": "A37 loop stores swapped pairs; 8C2 win-check decrements 3373; 761 random walk of v5 direction; 6B7 tile draw; screen shows 16 tiles"
+  },
+  {
+    "id": 6,
+    "label": "Inferred",
+    "claim": "Memory layout: 3373=pairs-remaining? (starts 04?), 3374+16 bytes = tile values per cell packed (high=?? low=tile id?). After A37: values like 0A 0D 02 13... 53E area stores cursor/selection state.",
+    "evidence": "read after A37 seed5: 04 0A 0D 02 13..."
+  },
+  {
+    "id": 7,
+    "label": "Inferred",
+    "claim": "Board tiles drawn on plane2 as 16x16 XO sprites from 2F33 using deck values; eyes blink (plane1 eyes open vs 2EC3 closed). Tiles positions from 446C table; deck at 3374+ holds tile ids per cell; matched cells FF cleared.",
+    "evidence": "Screen shows 16 ghost tiles plane2 + blink eyes plane1; B99→6B? draws sprite after loading tile id; memory 3374 holds 0x..FF"
+  },
+  {
+    "id": 8,
+    "label": "Inferred",
+    "claim": "Per-cell update: 711 loads cell record (v3,v4,v5?) from 3374+ve*3; B99 loops ve=0..7 over 8 ghosts each with pos(v3,v4) dir(v5): random action 761: 1/4 turn left+move, 1/4 turn right+move, 1/4 move-or-collide, 1/4 stay; movement via 65B collide against cursors returning FF blocked; 749/755 move; 68B/6A7/6B7/72D position/sprite helpers.",
+    "evidence": "761 rand&3 branches calling 749/755 with turn updates; 65B returns v2=FF on |dx|>=0x10 or |dy|>=8 indicating blocked against cursor offsets vc/vd"
+  },
+  {
+    "id": 9,
+    "label": "Inferred",
+    "claim": "This looks like Pac-Man-like: 8 ghosts auto-move randomly each tick; two player cursors (vc,vd)=P1 pos and (v7,v8)=P2 pos moved by keys; 866/894 select tile region; eating dots decrements 3373; 99D draws score; sprites from XO plane2.",
+    "evidence": "866 plays tone 1000 & sets va=01; 894 tone; 8C2 success tone 1033 + capture logic marking cell FF and dec 3373; 99D routine draws dots/score text routine called after selection"
+  }
+]

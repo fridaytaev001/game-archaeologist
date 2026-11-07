@@ -1,0 +1,33 @@
+[
+  {
+    "id": 1,
+    "label": "Recovered",
+    "claim": "SYNC_PC 0x4dc is top of main loop; opening screen (maze+title+ghost+player) reproduced 100%",
+    "evidence": "trace_to_sync + write_rewrite verifier 100% opening agreement"
+  },
+  {
+    "id": 2,
+    "label": "Observed",
+    "claim": "Step20 key9: player moves right along row vd=4 from vc=3 across ~7 tiles then dies/levels (va=2 path): draws at 6f6/72e chain then clear+score screen; inner loop runs continuously within one sync step",
+    "evidence": "trace_steps seed11: single step draws x=17..47 chain then @752,@78e clear,@844 score, @3c2 maze redraw"
+  },
+  {
+    "id": 4,
+    "label": "Recovered",
+    "claim": "Maze index is vc*12+vd (row-major: vd=x 0..11, vc=y 0..5); erase path index vd*2+vd+vd+v0+v0+vc; slide deltas from 0315; glide continues ONLY on tile 0x23, all other tiles (incl 0x00,0x05) draw+stop (va=0); death path: clear, then LEVEL text or SCORE text, consumes 3 randoms, busy-waits for a move key, calls 2265+3c2; v6 starts 0, death sets 1 (or 0x0b after 0x0a); score screens are transient (cleared by next 3c2) so pixel-final state is just next maze; 0202/0204 hold level/score BCD",
+    "evidence": "disasm 0540-06d2 + 078e-08b8 + run_experiment vd stepping; trace seed11 death step reaching v6=1"
+  },
+  {
+    "id": 5,
+    "label": "Recovered",
+    "claim": " Maze rows map: 3c2 draws 6 tiles per column chunk; vd steps 6 through RAM but visual x stays (vc+=5): so RAM 209+i maps to screen col (i//6), row (i%6) -- col-major confirmed; va!=1 step only does ghost anim (1 of 4 frames)",
+    "evidence": "3c2 loop: 6 regs v0-v5 per vd chunk drawn at same vc x, vc+=5 per chunk; trace 112 ops = borders+72 maze + ghost+player + title",
+    "replaces": 3
+  },
+  {
+    "id": 6,
+    "label": "Inferred",
+    "claim": "Boot maze 0209 is nearly all zeros with only two 0x05 walls; start tiles (2,3)->(10,3) are zeros so they STOP not glide; observed long slide contradicts tile-stop model -- need recheck of 68e/69c branch (maybe 0x00 means path: fallthrough jumps back to loop start without va=0)",
+    "evidence": "RAM dumps: boot maze 0209 = zeros except [9]=05,[14]=05,[16]=05; level1 08ba = structured; disasm 068e skip-if-v1==23 -> fallthrough 069e draws tile regardless: so wall branch sets va=0 but glide tiles DO draw too? misread"
+  }
+]

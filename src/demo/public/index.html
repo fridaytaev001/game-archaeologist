@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Game Archaeologist</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Game Archaeologist</h1>
+      <p class="tagline">
+        A compiled game with no source. Meta's model recovered its rules, we remade it, and
+        both run here in lockstep.
+      </p>
+    </header>
+
+    <main>
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Original</h2>
+          <span class="badge">Compiled ROM, running in our emulator</span>
+        </div>
+        <canvas id="original" width="640" height="320"></canvas>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2 id="remake-title">Remake</h2>
+          <span class="badge accent" id="remake-badge">Rules rewritten by the agent</span>
+        </div>
+        <canvas id="remake" width="640" height="320"></canvas>
+      </section>
+    </main>
+
+    <section class="check" aria-live="polite">
+      <div class="check-light" id="check-light"></div>
+      <div>
+        <strong id="check-title">Starting</strong>
+        <span id="check-detail"></span>
+      </div>
+    </section>
+
+    <section class="investigation">
+      <div class="panel-head">
+        <h2>How the agent worked it out</h2>
+        <span class="badge" id="investigation-source">From the agent's run log</span>
+      </div>
+      <ol id="timeline"></ol>
+    </section>
+
+    <footer>
+      <span id="controls"></span>
+      <span>
+        <button id="restart" type="button">New seed</button>
+        <button id="mod-toggle" type="button" hidden>Use mod</button>
+      </span>
+    </footer>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

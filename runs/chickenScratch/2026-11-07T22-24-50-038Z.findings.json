@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "label": "Recovered",
+    "claim": "Opening screen: hires 128x64 plane 3; 16x8 tile map drawn from ROM tile addrs (each 16 bytes: 8 plane1 + 8 plane2); player 16x16 sprite at (56,24) from 0x341C (64 bytes: 32 plane1 + 32 plane2)",
+    "evidence": "trace_to_sync seed 11 shows 128 tile draws + 16x16 draw; rewrite with split-plane decoding reaches 100% opening agreement"
+  },
+  {
+    "id": 2,
+    "label": "Observed",
+    "claim": "Step loop at AB3 redraws player (erase+draw, frame toggles 341C/345C) and moves 2 active ghosts; each ghost erase+redraw draws 8x8 sprite from 2F33+v2 variant table",
+    "evidence": "trace_steps seed 11 steps 1-10: player 56,24 alternating 341C/345C; ghost draws at 24,32,88,96 x 8,16 with frames 2F43/2F63/2F53 etc; v2 increments by 4 each step, vb increments mod 8"
+  },
+  {
+    "id": 3,
+    "label": "Observed",
+    "claim": "Opening screen = 128 tile draws + player 16x16 only; ghost frames 2F43/2F63 in row 1 are maze tiles, not separate sprites; extra ghost overlay breaks opening",
+    "evidence": "rewrite with 128 tiles + player reached 100% opening; rewrite adding ghost overlay dropped to 98.9% with mismatches at x32-95"
+  }
+]

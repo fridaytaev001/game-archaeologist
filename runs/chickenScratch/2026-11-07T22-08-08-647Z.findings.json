@@ -1,0 +1,57 @@
+[
+  {
+    "id": 1,
+    "label": "Inferred",
+    "claim": "Game is hires 128x64 XO-CHIP maze game with title screens at 0x260 and main gameplay loop around 0xAB3 looping until counter at 0x3373 reaches zero",
+    "evidence": "profile, disassembly of BAB/A37/B7D loop, screen captures showing title then maze playfield"
+  },
+  {
+    "id": 2,
+    "label": "Inferred",
+    "claim": "SYNC_PC 0x324 is the per-frame gate inside subroutine 0x2E0 title/credit sequence: draws animated credits, waits for key 6 edge to set v1=1/2; verifier likely uses this as sync. Main game loop is at 0xABB5? Actually BAB is outer driver: hires, call 260 (title art), call 3E6 (init), call A37 (maze game?) then increments?",
+    "evidence": "disassembly 200-33A, BAB-BBD"
+  },
+  {
+    "id": 3,
+    "label": "Inferred",
+    "claim": "Gameplay A37 loop draws scrolling maze with 8 enemies + player; keys 5/7/8/9 select direction modes, key 6 action; maze tiles at 0x0000 buffer via 0x557 scroll routines; player pos v7/v8, offset vc/vd, enemies indexed by ve with data at 0x3374",
+    "evidence": "disassembly A37-BA9 main loop, 557-659 scroll/draw, 6B7-761 enemy logic"
+  },
+  {
+    "id": 4,
+    "label": "Recovered",
+    "claim": "Boot sequence: BAB entry does title art (260), clears state (3E6), playable maze round (A37), end-of-round menu/score (468), repeats 3 rounds total then loops back to BAB titles",
+    "evidence": "BAB disassembly; run traces"
+  },
+  {
+    "id": 6,
+    "label": "Inferred",
+    "claim": "Frame loop structure: AB3-B99 is per-frame tick (hero input, monster AI, then 454 delay gate ~4 frames); BAB is outer game driver looping 3 A37 rounds. True SYNC should be 0xAB3 (top of per-frame loop) after initial entry to A37",
+    "evidence": "A37 enemy init at A61-A85, per-frame input at AD7-B77, movement loop B85-B95, frame gate 454 at B97, repeat check at B99",
+    "replaces": 5
+  },
+  {
+    "id": 7,
+    "label": "Inferred",
+    "claim": "Title/menu is at 2E0: needs key 6 edge to advance; initial screen shows title art; key 6 held or pressed/released sequence leads through sub-menus (35A pages, 3B2 score screens?) then into A37 gameplay after several key-6 presses",
+    "evidence": "2E0 logic: v1 stages, key6 transitions; experiments showing screen changes with key 6"
+  },
+  {
+    "id": 8,
+    "label": "Inferred",
+    "claim": " Maze game with menu pages; SYNC still needs finding because 0x324 covers title pattern that never reaches gameplay. Try SYNC 0xAB3 after long START_KEYS of key 6 presses",
+    "evidence": "profile showing only title routines; disassembly of page logic 35A+3B2"
+  },
+  {
+    "id": 9,
+    "label": "Inferred",
+    "claim": "SYNC_PC is 0xAB3 (or 0xA8F?): verifier stated mismatch at 0x324 but prompt says verifier holds same keys; true main loop for gameplay is AB3 which repeats until collectible count at 0x3373 hits 0. START_KEYS must navigate: 4 key-6 presses through 2E0/35A menus into A37",
+    "evidence": "A37-BA9 disassembly shows init then AB3 loop; experiment needed 4x key6 to reach gameplay at 6A9 with randomDraws 150"
+  },
+  {
+    "id": 10,
+    "label": "Observed",
+    "claim": "Gameplay memory: 0x53E holds v0-v2 (lives/score-ish, starts 00 00 FF), 0x3373 is collectible count (04 in run), 0x3374+ 3 bytes x8 enemies: pos/type entries like 08 0B 03... player v7/v8=0F/0E start, vc/vd scroll offset 08/0B, monster table at 0x0000 buffer via ve index",
+    "evidence": "read_memory after reaching gameplay; A61-A8D init code copying enemy data"
+  }
+]

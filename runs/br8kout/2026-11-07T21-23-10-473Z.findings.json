@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "label": "Inferred",
+    "claim": "SYNC_PC is 0x2B5, top of input+ball+delay loop; init sets player (VD,VC)=(0x1E,0x1E), ball (VB,VA)=(0x40,0x1D), V8=-1, V9=±1 from rand",
+    "evidence": "Disassembly: 029F-02B3 init then 02B5 key checks, 02C1 ball move, 02C3 delay, 02C5 jump 2B5"
+  },
+  {
+    "id": 2,
+    "label": "Inferred",
+    "claim": "Brick wall is 7x7 at x=5+8*c, y=2+2*r; 8xy7 sets VF to borrow (1 if >=), so inner continues while V1<0x38, outer while V0<0x10",
+    "evidence": "Borrow logic explains 7 per row; observed wall rows 2,4,6,8,10,12,14 cols 5,13,21,29,37,45,53"
+  },
+  {
+    "id": 3,
+    "label": "Observed",
+    "claim": "Key 7 moves paddle left (VD -4 each step with erase+draw), key 9 moves right (+4); no clamping, paddle wraps around screen XOR",
+    "evidence": "VD went 1E->7E with key 9, 1E->C2 with key 7; screen shows paddle split across edges due to wrap"
+  },
+  {
+    "id": 4,
+    "label": "Inferred",
+    "claim": "Main loop SYNC_PC=0x2B5: key7 left, key9 right, ball move, delay 4; ball (VB,VA) vel (V9,V8)=±1, paddle (VD,VC), wall 7x7 bricks x=5+8c y=2+2r",
+    "evidence": "Disassembly 02B5-02C5; observed VD moves ±4, VB/VA ±1, bounces at x 0/63 y 0/31, collision flips V8 + brick erase unless VA==VC, reset at y==31"
+  },
+  {
+    "id": 5,
+    "label": "Inferred",
+    "claim": "Ball move order: erase, VB+=V9, VA+=V8, draw (VF=collision), side/top/bottom bounces, if VF flip V8 and unless on paddle row erase 6-wide brick at ((VB-5)&F8)+5, if VA==31 clear+reset ball to (30,20) keep paddle/vels",
+    "evidence": "Disassembly 0263-0291; observed bounces, brick holes, reset; paddle moves ±4 via erase/draw before ball"
+  },
+  {
+    "id": 6,
+    "label": "Inferred",
+    "claim": "VF dest in 8XY7 yields borrow flag (1 if Vy>=Vx else 0), explaining 7x7 wall loops exiting at V0=0x10 V1=0x3D",
+    "evidence": "Inner/outer exit values 0x3D/0x10 match while-V1<0x38 while-V0<0x10; standard difference would never hit 0x38"
+  },
+  {
+    "id": 7,
+    "label": "Recovered",
+    "claim": "Ball sprite byte is 0x80 (single pixel), paddle/brick are 0xFC (6 wide); first rewrite used FC for ball causing 5-pixel mismatch",
+    "evidence": "Memory bytes 0x202=FC 0x203=FC 0x204=80; verifier step0 original single '#' vs rewrite '######'"
+  },
+  {
+    "id": 8,
+    "label": "Inferred",
+    "claim": "Reset on miss clears screen and rebuilds full wall, ball to (30,20), keeps paddle and velocities (vertical forced up)",
+    "evidence": "Disassembly 0285-0291; long run shows wall damage accumulates without reset until y==31"
+  }
+]
